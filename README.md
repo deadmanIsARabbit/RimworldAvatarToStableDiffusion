@@ -18,7 +18,7 @@ At this point I have taken all the work done by [Pat](https://steamcommunity.com
     * urlLib `pip install urllib`
 
 ## Installation
-1. Simply download the executable and the config file.
+1. Simply download the executable and the config file from the releases.
 2. Edit the config file to meet your desired Stable Diffusion processing settings.
 3. Start RimWorld and go into the settings of the avatar mod. Put the full path of the executablein the last text field.
 
