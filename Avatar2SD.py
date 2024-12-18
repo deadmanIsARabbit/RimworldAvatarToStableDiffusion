@@ -1,31 +1,28 @@
-from datetime import datetime
 import urllib.request
-import base64
-import json
-import time
-import sys
-import os
-import configparser
+from base64 import b64encode, b64decode
+from json import dumps, load, loads
+from sys import argv, exit
+from configparser import ConfigParser
 from rembg import remove
 from PIL import Image, ImageOps, ImageChops
-from operator import itemgetter
+from traceback import format_exc
 
 #Read the config file
-config = configparser.ConfigParser()
+config = ConfigParser()
 config.read('Avatar2SD.ini')
 webui_server_url = config['DEFAULT']['webui_server_url']
-def getOptionOrInput(option, type, help):
+def getOptionOrInput(option, returntype, help):
     if option in config['DEFAULT']:
         return config['DEFAULT'][option]
     else: 
         print("There is no default value set for " + option)
         print("Hint:")
         print(help)
-        option_value = input("Enter the "+ option+ " as "+ str(type))
-        return option_value
+        option_value = input("Enter a value for "+ option+ " as "+ str(returntype))
+        return returntype(option_value)
 
 #Get all options except webui_server_url
-opt_fill_color = getOptionOrInput('fill_color', eval, 'Fill Color for the background of the image as comma seperated RGB')
+opt_fill_color = getOptionOrInput('fill_color', str, 'Fill Color for the background of the image as comma seperated RGB')
 opt_border_width = getOptionOrInput('border_width', int, 'The number of pixel to be removed from the image border')
 opt_best_prompt =  getOptionOrInput('best_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
 opt_seed = getOptionOrInput('seed', int, 'Seed to be used. -1 shall be random. I guess.')
@@ -45,16 +42,13 @@ def trim(im):
     if bbox:
         return im.crop(bbox)
  
-def timestamp():
-    return datetime.fromtimestamp(time.time()).strftime("%Y%m%d-%H%M%S")
- 
 def encode_file_to_base64(path):
     with open(path, 'rb') as file:
-        return base64.b64encode(file.read()).decode('utf-8')
+        return b64encode(file.read()).decode('utf-8')
 
 def decode_and_save_base64(base64_str, save_path):
     try:
-        decoded_data = base64.b64decode(base64_str)
+        decoded_data = b64decode(base64_str)
         with open(save_path, "wb") as file:
             file.write(decoded_data)
         #Open image
@@ -64,10 +58,8 @@ def decode_and_save_base64(base64_str, save_path):
         copy_image_input = image_input.copy()
         backup_path = save_path.replace("avatar", "avatar\\BackupImages")
         copy_image_input.save(backup_path)
-        #Fill is white
-        fill_color = opt_fill_color
         #Add white border
-        image_input = ImageOps.expand(image_input,border=opt_border_width,fill=fill_color)
+        image_input = ImageOps.expand(image_input,border=int(opt_border_width),fill=eval(opt_fill_color))
         #Removes background
         output = remove(image_input)
         #Removes white border that .expand() added
@@ -77,36 +69,34 @@ def decode_and_save_base64(base64_str, save_path):
         print("Image saved successfully:", save_path)
     except Exception as e:
         print("Error saving image:", e)
+        print(format_exc())
  
 def call_api(api_endpoint, **payload):
-    data = json.dumps(payload).encode('utf-8')
+    data = dumps(payload).encode('utf-8')
     request = urllib.request.Request(
         f'{webui_server_url}/{api_endpoint}',
         headers={'Content-Type': 'application/json'},
         data=data,
     )
     response = urllib.request.urlopen(request)
-    return json.loads(response.read().decode('utf-8'))
+    return loads(response.read().decode('utf-8'))
 
 def get_data_from_api(api_endpoint):
     response = urllib.request.urlopen( f'{webui_server_url}/{api_endpoint}')
-    data = json.load(response)   
-    return data 
+    return load(response) 
 
 def get_Models():
     models = get_data_from_api('sdapi/v1/sd-models')
     selection_list = []
-    selection_index = 1 
     for val in models:
         #print(val)
-        selection_list.insert(selection_index, val)
-        selection_index = selection_index + 1
+        selection_list.append(val)
     return selection_list
 
 def select_Model(array):
     print("Choose Your Model:")
     for  index, val in enumerate(array):
-        print("Press "+str(index)+" for "+val['title'])
+        print("Press "+str(index)+" for "+ str(val['title']))
     selected = int(input("Enter an integer: "))
     return array[selected]['model_name']
 
@@ -141,15 +131,12 @@ def call_img2img_api(init_image_path, prompt):
     response = call_api('sdapi/v1/img2img', **payload)
     generated_image = response.get('images')[0]
     decode_and_save_base64(generated_image, init_image_path)
-    #rembg()
-    sys.exit()
+    exit(0)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    if len(argv) < 3:
         print("Usage: python script.py <image_path> <prompt>")
-        sys.exit(1)
- 
-    image_path = sys.argv[1]
-    prompt = sys.argv[2]
- 
+        exit(1)
+    image_path = argv[1]
+    prompt = argv[2]
     call_img2img_api(image_path, prompt)
