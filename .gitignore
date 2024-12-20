@@ -5,6 +5,7 @@
 
 #ignore output and .exe
 *.exe
+*.spec
 output/
 dist/
 build/
