@@ -25,3 +25,7 @@ At this point I have taken all the work done by [Pat](https://steamcommunity.com
 ## Usage
 The script is written in such a way that you do not have to interact with it if the configuration file is completely filled out. 
 However, if you want to change parameters during runtime, you can comment out parameters in the configuration, you will then be asked for the desired option when generating the image (except for the webui_server_url, because why)
+
+##Build
+If you want to build this yourself simply run
+`pyinstaller --noconfirm --onefile --console  "Avatar2SD.py"` from the directory containing the  `Avatar2SD.py`
