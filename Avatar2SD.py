@@ -6,10 +6,14 @@ from configparser import ConfigParser
 from rembg import remove
 from PIL import Image, ImageOps, ImageChops
 from traceback import format_exc
+from os import path
+
 
 #Read the config file
+configFile = path.join(path.dirname(path.realpath(__file__)),'Avatar2SD.ini') 
+
 config = ConfigParser()
-config.read('Avatar2SD.ini')
+config.read(configFile)
 webui_server_url = config['DEFAULT']['webui_server_url']
 def getOptionOrInput(option, returntype, help):
     if option in config['DEFAULT']:
