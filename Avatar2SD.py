@@ -1,17 +1,14 @@
 import urllib.request
 from base64 import b64encode, b64decode
 from json import dumps, load, loads
-from sys import argv, exit
 from configparser import ConfigParser
 from rembg import remove
 from PIL import Image, ImageOps, ImageChops
 from traceback import format_exc
-from os import path
-
+import sys, os
 
 #Read the config file
-cfg = path.join(path.dirname(path.realpath(__file__)),'Avatar2SD.ini') 
-print(cfg)
+cfg = os.path.join(os.path.dirname(sys.executable),'Avatar2SD.ini') 
 config = ConfigParser()
 config.read(cfg)
 webui_server_url = config['DEFAULT']['webui_server_url']
@@ -94,7 +91,6 @@ def get_Models():
     models = get_data_from_api('sdapi/v1/sd-models')
     selection_list = []
     for val in models:
-        #print(val)
         selection_list.append(val)
     return selection_list
 
@@ -106,7 +102,7 @@ def select_Model(array):
     return array[selected]['model_name']
 
 def call_img2img_api(init_image_path, prompt):
-    #This is my altered prompt from Saiphe's work, (no background:1:1) encourages a white background I believe, which works well with
+    #This is my(Pat) altered prompt from Saiphe's work, (no background:1:1) encourages a white background I believe, which works well with
     #adding the white border and rembg(ing) the image (The automatic background remover library this code uses)
     #The reason for the white border adder, is the rembg would often remove sholders in inconsistent ways, most often when colonist has
     #long hair that would separate a should from the rest of the body in the image
@@ -136,12 +132,12 @@ def call_img2img_api(init_image_path, prompt):
     response = call_api('sdapi/v1/img2img', **payload)
     generated_image = response.get('images')[0]
     decode_and_save_base64(generated_image, init_image_path)
-    exit(0)
+    sys.exit(0)
 
 if __name__ == '__main__':
-    if len(argv) < 3:
+    if len(sys.argv) < 3:
         print("Usage: python script.py <image_path> <prompt>")
-        exit(1)
-    image_path = argv[1]
-    prompt = argv[2]
+        sys.exit(1)
+    image_path = sys.argv[1]
+    prompt = sys.argv[2]
     call_img2img_api(image_path, prompt)
