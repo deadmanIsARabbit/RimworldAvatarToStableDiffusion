@@ -6,6 +6,7 @@
 #ignore output and .exe
 *.exe
 output/
+dist/
 
 # User-specific files
 *.rsuser
