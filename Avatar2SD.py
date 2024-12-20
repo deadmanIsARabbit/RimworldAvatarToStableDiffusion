@@ -10,11 +10,12 @@ from os import path
 
 
 #Read the config file
-configFile = path.join(path.dirname(path.realpath(__file__)),'Avatar2SD.ini') 
-
+cfg = path.join(path.dirname(path.realpath(__file__)),'Avatar2SD.ini') 
+print(cfg)
 config = ConfigParser()
-config.read(configFile)
+config.read(cfg)
 webui_server_url = config['DEFAULT']['webui_server_url']
+
 def getOptionOrInput(option, returntype, help):
     if option in config['DEFAULT']:
         return config['DEFAULT'][option]
