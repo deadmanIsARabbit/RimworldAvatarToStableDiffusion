@@ -59,6 +59,9 @@ def decode_and_save_base64(base64_str, save_path):
         #by the next portrait generation of the colonist, so be careful
         copy_image_input = image_input.copy()
         backup_path = save_path.replace("avatar", "avatar\\BackupImages")
+        backup_dir = os.path.dirname(os.path.abspath(backup_path))
+        if not os.path.exists(backup_dir):
+             os.makedirs(backup_dir)
         copy_image_input.save(backup_path)
         #Add white border
         image_input = ImageOps.expand(image_input,border=int(opt_border_width),fill=eval(opt_fill_color))
