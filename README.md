@@ -2,7 +2,7 @@
 Configurable Python script and executable to connect to a (local) Stable Diffusion WebUi instance
 
 ## What does it do
-This is a simple Python script based on the work of [Saiphe](https://steamcommunity.com/id/saipheblue) and [Pat](https://steamcommunity.com/profiles/76561198174973085) to pass the avatars created by the RimWorld Avatar Mod to a (local) Stable Diffusion instance and create higher resolution images. 
+This is a simple Python script based on the work of [Saiphe](https://steamcommunity.com/id/saipheblue) and [Pat](https://steamcommunity.com/profiles/76561198174973085) to pass the avatars created by the [RimWorld Avatar Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3111373293) to a (local) Stable Diffusion instance and create higher resolution images. 
 
 At this point I have taken all the work done by [Pat](https://steamcommunity.com/profiles/76561198174973085) and [Saiphe](https://steamcommunity.com/id/saipheblue) to make it a bit more configurable. So props go to both of them.
 
@@ -20,7 +20,7 @@ At this point I have taken all the work done by [Pat](https://steamcommunity.com
 ## Installation
 1. Simply download the executable and the config file from the releases.
 2. Edit the config file to meet your desired Stable Diffusion processing settings.
-3. Start RimWorld and go into the settings of the avatar mod. Put the full path of the executablein the last text field.
+3. Start RimWorld and go into the settings of the [avatar mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3111373293). Put the full path of the executable in the last text field.
 
 ## Usage
 The script is written in such a way that you do not have to interact with it if the configuration file is completely filled out. 
