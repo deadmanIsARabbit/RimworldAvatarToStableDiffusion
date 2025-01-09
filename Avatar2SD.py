@@ -27,6 +27,7 @@ def getOptionOrInput(option, returntype, help):
 opt_fill_color = getOptionOrInput('fill_color', str, 'Fill Color for the background of the image as comma seperated RGB')
 opt_border_width = getOptionOrInput('border_width', int, 'The number of pixel to be removed from the image border')
 opt_best_prompt =  getOptionOrInput('best_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
+opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input.')
 opt_seed = getOptionOrInput('seed', int, 'Seed to be used. -1 shall be random. I guess.')
 opt_steps = getOptionOrInput('steps', int, 'Sampling Steps. How many times to improve the generated image iteratively. higher values take longer#very low values can produce bad results')
 opt_denoising_strength = getOptionOrInput('denoising_strength', float, 'Determines how little respect the algorithm should have for image`s content. At 0, nothing will change, and at 1 you`ll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps specifies.')
@@ -119,6 +120,7 @@ def call_img2img_api(init_image_path, prompt):
     #override_settings: I used model aamXLAnimeMix_v10 from civitai for testing
     payload = {
         "prompt": final_prompt,
+        "negative_prompt": opt_negative_prompt,
         "seed": opt_seed,
         "steps": opt_steps,
         "width": opt_width,
