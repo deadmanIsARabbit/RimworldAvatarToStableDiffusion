@@ -26,17 +26,17 @@ def getOptionOrInput(option, returntype, help):
 #Get all options except webui_server_url
 opt_fill_color = getOptionOrInput('fill_color', str, 'Fill Color for the background of the image as comma seperated RGB')
 opt_border_width = getOptionOrInput('border_width', int, 'The number of pixel to be removed from the image border')
-opt_best_prompt =  getOptionOrInput('best_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
-opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input.')
+opt_positive_prompt =  getOptionOrInput('positive_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
+opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input')
+opt_prompt_delimiter = getOptionOrInput('prompt_delimiter', str, 'Define a delimiter to split the interactive prompt input from within the game into an addition postive and negative prompt')
 opt_seed = getOptionOrInput('seed', int, 'Seed to be used. -1 shall be random. I guess.')
 opt_steps = getOptionOrInput('steps', int, 'Sampling Steps. How many times to improve the generated image iteratively. higher values take longer#very low values can produce bad results')
-opt_denoising_strength = getOptionOrInput('denoising_strength', float, 'Determines how little respect the algorithm should have for image`s content. At 0, nothing will change, and at 1 you`ll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps specifies.')
+opt_denoising_strength = getOptionOrInput('denoising_strength', float, 'Determines how little respect the algorithm should have for image`s content. At 0, nothing will change, and at 1 you`ll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps specifies')
 opt_n_iter = getOptionOrInput('n_iter', int, 'Number of denoising iterations')
 opt_width = getOptionOrInput('width', int, 'SD image width in px')
 opt_height = getOptionOrInput('height', int, 'SD image height in px')
 opt_batch_size = getOptionOrInput('batch_size', int, 'How many image to create in a single batch')
 opt_sampler_name = getOptionOrInput('sampler_name', str, 'Algorithm to use to produce the image')
-
 def trim(im):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
     diff = ImageChops.difference(im, bg)
@@ -110,7 +110,14 @@ def call_img2img_api(init_image_path, prompt):
     #adding the white border and rembg(ing) the image (The automatic background remover library this code uses)
     #The reason for the white border adder, is the rembg would often remove sholders in inconsistent ways, most often when colonist has
     #long hair that would separate a should from the rest of the body in the image
-    final_prompt = opt_best_prompt + " " + prompt
+    if opt_prompt_delimiter in prompt:
+        pos_prompt = prompt.split(opt_prompt_delimiter)[0]
+        neg_prompt = prompt.split(opt_prompt_delimiter)[1]
+    else:
+        pos_prompt = prompt
+        neg_prompt = ''
+    final_pos_prompt = opt_positive_prompt + " " + pos_prompt
+    final_neg_prompt = opt_negative_prompt + " " + neg_prompt 
     if 'model_name' in config['DEFAULT']:
         model = config['DEFAULT']['model_name']
     else: 
@@ -118,9 +125,12 @@ def call_img2img_api(init_image_path, prompt):
         models = get_Models()
         model = select_Model(models)
     #override_settings: I used model aamXLAnimeMix_v10 from civitai for testing
+    print('We are using this prompt: ' + final_pos_prompt)
+    print('With this negative prompt: ' + final_neg_prompt)
+    print('And this model:' + model)
     payload = {
-        "prompt": final_prompt,
-        "negative_prompt": opt_negative_prompt,
+        "prompt": final_pos_prompt,
+        "negative_prompt": final_neg_prompt,
         "seed": opt_seed,
         "steps": opt_steps,
         "width": opt_width,
