@@ -18,6 +18,7 @@ At this point I have taken all the work done by [Pat](https://steamcommunity.com
     * rembg `pip install rembg`
     * PIL `pip install pillow`
     * urlLib `pip install urllib`
+    * OR install from the requirements.txt `pip install -r requirements.txt`
 
 ## Installation
 1. Simply download the executable and the config file from the releases.

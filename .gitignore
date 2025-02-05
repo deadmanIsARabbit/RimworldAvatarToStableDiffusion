@@ -9,6 +9,11 @@
 output/
 dist/
 build/
+Include/
+Lib/
+Scripts/
+share
+pyvenv.cfg
 
 # User-specific files
 *.rsuser
