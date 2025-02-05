@@ -37,6 +37,7 @@ opt_width = getOptionOrInput('width', int, 'SD image width in px')
 opt_height = getOptionOrInput('height', int, 'SD image height in px')
 opt_batch_size = getOptionOrInput('batch_size', int, 'How many image to create in a single batch')
 opt_sampler_name = getOptionOrInput('sampler_name', str, 'Algorithm to use to produce the image')
+
 def trim(im):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
     diff = ImageChops.difference(im, bg)
@@ -44,7 +45,7 @@ def trim(im):
     bbox = diff.getbbox()
     if bbox:
         return im.crop(bbox)
- 
+
 def encode_file_to_base64(path):
     with open(path, 'rb') as file:
         return b64encode(file.read()).decode('utf-8')
@@ -71,7 +72,8 @@ def decode_and_save_base64(base64_str, save_path):
         #Removes white border that .expand() added
         output = trim(output)
         #Saves final output image
-        output.save(save_path)
+        output.save(save_path+".tmp.png")
+        os.replace(save_path+".tmp.png", save_path)
         print("Image saved successfully:", save_path)
     except Exception as e:
         print("Error saving image:", e)
