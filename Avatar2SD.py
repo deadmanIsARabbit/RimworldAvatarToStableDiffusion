@@ -1,17 +1,21 @@
+import websocket #NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
+import uuid
 import urllib.request
+import urllib.parse
 from base64 import b64encode, b64decode
 from json import dumps, load, loads
 from configparser import ConfigParser
 from rembg import remove
 from PIL import Image, ImageOps, ImageChops
 from traceback import format_exc
-import sys, os
+from requests_toolbelt import MultipartEncoder
+import sys, os, random
 
 #Read the config file
 cfg = os.path.join(os.path.dirname(sys.executable),'Avatar2SD.ini') 
 config = ConfigParser()
 config.read(cfg)
-webui_server_url = config['DEFAULT']['webui_server_url']
+server_address = config['DEFAULT']['server_address']
 
 def getOptionOrInput(option, returntype, help):
     if option in config['DEFAULT']:
@@ -23,21 +27,26 @@ def getOptionOrInput(option, returntype, help):
         option_value = input("Enter a value for "+ option+ " as "+ str(returntype))
         return returntype(option_value)
 
-#Get all options except webui_server_url
-opt_fill_color = getOptionOrInput('fill_color', str, 'Fill Color for the background of the image as comma seperated RGB')
-opt_border_width = getOptionOrInput('border_width', int, 'The number of pixel to be removed from the image border')
+#Get all options except server_address
+opt_provider = getOptionOrInput('provider', str, 'Choose either WebUI oder ComfyUI')
 opt_positive_prompt =  getOptionOrInput('positive_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
 opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input')
 opt_prompt_delimiter = getOptionOrInput('prompt_delimiter', str, 'Define a delimiter to split the interactive prompt input from within the game into an addition postive and negative prompt')
-opt_seed = getOptionOrInput('seed', int, 'Seed to be used. -1 shall be random. I guess.')
-opt_steps = getOptionOrInput('steps', int, 'Sampling Steps. How many times to improve the generated image iteratively. higher values take longer#very low values can produce bad results')
-opt_denoising_strength = getOptionOrInput('denoising_strength', float, 'Determines how little respect the algorithm should have for image`s content. At 0, nothing will change, and at 1 you`ll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps specifies')
-opt_n_iter = getOptionOrInput('n_iter', int, 'Number of denoising iterations')
-opt_width = getOptionOrInput('width', int, 'SD image width in px')
-opt_height = getOptionOrInput('height', int, 'SD image height in px')
-opt_batch_size = getOptionOrInput('batch_size', int, 'How many image to create in a single batch')
-opt_sampler_name = getOptionOrInput('sampler_name', str, 'Algorithm to use to produce the image')
+if opt_provider == 'WebUI':
+    opt_fill_color = getOptionOrInput('fill_color', str, 'Fill Color for the background of the image as comma seperated RGB')
+    opt_border_width = getOptionOrInput('border_width', int, 'The number of pixel to be removed from the image border')
+    opt_seed = getOptionOrInput('seed', int, 'Seed to be used. -1 shall be random. I guess.')
+    opt_steps = getOptionOrInput('steps', int, 'Sampling Steps. How many times to improve the generated image iteratively. higher values take longer#very low values can produce bad results')
+    opt_denoising_strength = getOptionOrInput('denoising_strength', float, 'Determines how little respect the algorithm should have for image`s content. At 0, nothing will change, and at 1 you`ll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps specifies')
+    opt_n_iter = getOptionOrInput('n_iter', int, 'Number of denoising iterations')
+    opt_width = getOptionOrInput('width', int, 'SD image width in px')
+    opt_height = getOptionOrInput('height', int, 'SD image height in px')
+    opt_batch_size = getOptionOrInput('batch_size', int, 'How many image to create in a single batch')
+    opt_sampler_name = getOptionOrInput('sampler_name', str, 'Algorithm to use to produce the image')
+else: 
+    opt_workflow_path = getOptionOrInput('workflow_path', str, 'Path of the Workflow to be used by ComfyUI (including filename)')
 
+#WebUI relevant functions
 def trim(im):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
     diff = ImageChops.difference(im, bg)
@@ -82,7 +91,7 @@ def decode_and_save_base64(base64_str, save_path):
 def call_api(api_endpoint, **payload):
     data = dumps(payload).encode('utf-8')
     request = urllib.request.Request(
-        f'{webui_server_url}/{api_endpoint}',
+        f'{server_address}/{api_endpoint}',
         headers={'Content-Type': 'application/json'},
         data=data,
     )
@@ -90,7 +99,7 @@ def call_api(api_endpoint, **payload):
     return loads(response.read().decode('utf-8'))
 
 def get_data_from_api(api_endpoint):
-    response = urllib.request.urlopen( f'{webui_server_url}/{api_endpoint}')
+    response = urllib.request.urlopen( f'{server_address}/{api_endpoint}')
     return load(response) 
 
 def get_Models():
@@ -151,10 +160,125 @@ def call_img2img_api(init_image_path, prompt):
     decode_and_save_base64(generated_image, init_image_path)
     sys.exit(0)
 
+#ComfyUI relevant functions
+
+def open_websocket_connection():
+  client_id=str(uuid.uuid4())
+
+  ws = websocket.WebSocket()
+  ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
+  return ws, server_address, client_id
+
+def queue_prompt(prompt, client_id, server_address):
+
+  p = {"prompt": prompt, "client_id": client_id}
+  headers = {'Content-Type': 'application/json'}
+  data = json.dumps(p).encode('utf-8')
+  req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data, headers=headers)
+  return json.loads(urllib.request.urlopen(req).read())
+
+def upload_image(input_path, name, server_address, image_type="input", overwrite=False):
+  with open(input_path, 'rb') as file:
+    multipart_data = MultipartEncoder(
+      fields= {
+        'image': (name, file, 'image/png'),
+        'type': image_type,
+        'overwrite': str(overwrite).lower()
+      }
+    )
+
+    data = multipart_data
+    headers = { 'Content-Type': multipart_data.content_type }
+    request = urllib.request.Request("http://{}/upload/image".format(server_address), data=data, headers=headers)
+    with urllib.request.urlopen(request) as response:
+      return response.read()
+
+
+def get_image(filename, subfolder, folder_type, server_address):
+  data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
+  url_values = urllib.parse.urlencode(data)
+  with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
+      return response.read()
+
+def load_workflow(workflow_path):
+  try:
+      with open(workflow_path, 'r') as file:
+          workflow = json.load(file)
+          return json.dumps(workflow)
+  except FileNotFoundError:
+      print(f"The file {workflow_path} was not found.")
+      return None
+  except json.JSONDecodeError:
+      print(f"The file {workflow_path} contains invalid JSON.")
+      return None
+
+def prompt_to_image(workflow, positve_prompt, negative_prompt='', save_previews=False):
+  prompt = json.loads(workflow)
+  id_to_class_type = {id: details['class_type'] for id, details in prompt.items()}
+  k_sampler = [key for key, value in id_to_class_type.items() if value == 'KSampler'][0]
+  prompt.get(k_sampler)['inputs']['seed'] = random.randint(10**14, 10**15 - 1)
+  postive_input_id = prompt.get(k_sampler)['inputs']['positive'][0]
+  prompt.get(postive_input_id)['inputs']['text'] = positve_prompt
+
+  if negative_prompt != '':
+    negative_input_id = prompt.get(k_sampler)['inputs']['negative'][0]
+    prompt.get(negative_input_id)['inputs']['text'] = negative_prompt
+
+  generate_image_by_prompt(prompt, './output/', save_previews)
+
+
+def prompt_image_to_image(workflow, input_path, positve_prompt, negative_prompt='', save_previews=False):
+  prompt = json.loads(workflow)
+  id_to_class_type = {id: details['class_type'] for id, details in prompt.items()}
+  k_sampler = [key for key, value in id_to_class_type.items() if value == 'KSampler'][0]
+  prompt.get(k_sampler)['inputs']['seed'] = random.randint(10**14, 10**15 - 1)
+  postive_input_id = prompt.get(k_sampler)['inputs']['positive'][0]
+  prompt.get(postive_input_id)['inputs']['text'] = positve_prompt
+
+  if negative_prompt != '':
+    negative_input_id = prompt.get(k_sampler)['inputs']['negative'][0]
+    prompt.get(negative_input_id)['inputs']['text'] = negative_prompt
+
+  image_loader = [key for key, value in id_to_class_type.items() if value == 'LoadImage'][0]
+  filename = input_path.split('/')[-1]
+  prompt.get(image_loader)['inputs']['image'] = filename
+
+  generate_image_by_prompt_and_image(prompt, './output/', input_path, filename, save_previews)
+
+def generate_image_by_prompt_and_image(prompt, output_path, input_path, filename, save_previews=False):
+  try:
+    ws, server_address, client_id = open_websocket_connection()
+    upload_image(input_path, filename, server_address)
+    prompt_id = queue_prompt(prompt, client_id, server_address)['prompt_id']
+    track_progress(prompt, ws, prompt_id)
+    images = get_images(prompt_id, server_address, save_previews)
+    save_image(images, output_path, save_previews)
+  finally:
+    ws.close()
+    
+def split_prompt(prompt):
+    if opt_prompt_delimiter in prompt:
+        pos_prompt = prompt.split(opt_prompt_delimiter)[0]
+        neg_prompt = prompt.split(opt_prompt_delimiter)[1]
+    else:
+        pos_prompt = prompt
+        neg_prompt = ''
+    final_prompt['pos'] = opt_positive_prompt + " " + pos_prompt
+    final_prompt['neg'] = opt_negative_prompt + " " + neg_prompt 
+    return final_prompt
+
+#Main Function
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("Usage: python script.py <image_path> <prompt>")
         sys.exit(1)
     image_path = sys.argv[1]
     prompt = sys.argv[2]
-    call_img2img_api(image_path, prompt)
+    if opt_provider == 'WebUI':
+        call_img2img_api(image_path, prompt)
+    else: 
+        final_prompt = split_prompt(sys.argv[2])
+        image_path = sys.argv[1]
+        print("image_path:", image_path)
+        generate_image_by_prompt_and_image(prompt, image_path, image_path, image_path)
+        sys.exit(0)

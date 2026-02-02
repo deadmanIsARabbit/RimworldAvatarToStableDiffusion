@@ -34,3 +34,4 @@ sympy==1.13.3
 tifffile==2025.1.10
 tqdm==4.67.1
 urllib3==2.3.0
+websocket-client
