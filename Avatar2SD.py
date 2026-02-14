@@ -328,14 +328,29 @@ def split_prompt(prompt):
     final_prompt.append(opt_positive_prompt + " " + pos_prompt)
     return final_prompt
 
-def generate_backup_image():
+def generate_backup():
     base_dir = Path(os.path.dirname(image_path))
     backup_dir = base_dir / "backup"
     backup_dir.mkdir(parents=True, exist_ok=True)
-    tmp_name = str(datetime.datetime.now().strftime('%y%m%d%H%M%S')) + str(img_name)
-    backup_dst = backup_dir / tmp_name
+    tmp_img_name = str(datetime.datetime.now().strftime('%y%m%d%H%M%S')) + str(img_name)
+    backup_dst = backup_dir / tmp_img_name
     shutil.copyfile(image_path, backup_dst)
-
+    if opt_save_prompt == True:
+        txt_name = str(img_name).split(".")[0] + ".txt"
+        txt_path = base_dir + txt_name
+        tmp_txt_name = tmp_img_name.split(".")[0] + ".txt"
+        backup_dst = backup_dir / tmp_txt_name
+        if os.path.exists(txt_path):
+            shutil.copyfile(txt_path, backup_dst)
+            
+def save_prompt():
+    base_dir = Path(os.path.dirname(image_path))
+    txt_name = str(img_name).split(".")[0] + ".txt"
+    txt_path =  txt_path = base_dir + txt_name
+    with open(txt_path, mode="wt") as f:
+        f.write(final_prompt)
+        f.flush()
+        f.close
 #Main Function
 if __name__ == '__main__':
     if len(sys.argv) < 3:
@@ -350,6 +365,8 @@ if __name__ == '__main__':
     opt_positive_prompt =  getOptionOrInput('positive_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
     opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input')
     opt_prompt_delimiter = getOptionOrInput('prompt_delimiter', str, 'Define a delimiter to split the interactive prompt input from within the game into an addition postive and negative prompt')
+    opt_backup = getOptionOrInput('create_backup', str, 'Create Backup of images and prompts(later if enabled)?')
+    opt_save_prompt = getOptionOrInput('save_prompt', str, 'Save prompt to text?')
     if opt_provider == 'WebUI':
         from PIL import Image, ImageOps, ImageChops
         from traceback import format_exc
@@ -384,7 +401,10 @@ if __name__ == '__main__':
         img_name = os.path.basename(image_path)
         global save_path
         save_path = image_path
-        generate_backup_image()
+        if opt_backup == True:
+            generate_backup()
+        if opt_save_prompt == True:
+            save_prompt()
         workflow = load_workflow(Path(opt_workflow_path))
         prompt_image_to_image(workflow, image_path, final_prompt[1], final_prompt[0], save_previews=False)
         # sys.exit(0) 
