@@ -29,7 +29,7 @@ def readConfig():
 
 def getOptionOrInput(option, returntype, help):
     if option in config['DEFAULT']:
-        return config['DEFAULT'][option]
+        return returntype(config['DEFAULT'][option])
     else: 
         print("There is no default value set for " + option)
         print("Hint:")
@@ -337,7 +337,7 @@ def generate_backup():
     shutil.copyfile(image_path, backup_dst)
     if opt_save_prompt == True:
         txt_name = str(img_name).split(".")[0] + ".txt"
-        txt_path = base_dir + txt_name
+        txt_path = base_dir / txt_name
         tmp_txt_name = tmp_img_name.split(".")[0] + ".txt"
         backup_dst = backup_dir / tmp_txt_name
         if os.path.exists(txt_path):
@@ -346,9 +346,9 @@ def generate_backup():
 def save_prompt():
     base_dir = Path(os.path.dirname(image_path))
     txt_name = str(img_name).split(".")[0] + ".txt"
-    txt_path =  txt_path = base_dir + txt_name
+    txt_path =  txt_path = base_dir / txt_name
     with open(txt_path, mode="wt") as f:
-        f.write(final_prompt)
+        f.write(final_prompt[1] +opt_prompt_delimiter+ final_prompt[0] )
         f.flush()
         f.close
 #Main Function
@@ -365,8 +365,8 @@ if __name__ == '__main__':
     opt_positive_prompt =  getOptionOrInput('positive_prompt', str, 'Prompt to be appended before the input prompt from RimWorlds Avatar Mod')
     opt_negative_prompt = getOptionOrInput('negative_prompt', str, 'Negative Prompts are a unique approach to guide AI by specifying what the user does not want to see, without any extra input')
     opt_prompt_delimiter = getOptionOrInput('prompt_delimiter', str, 'Define a delimiter to split the interactive prompt input from within the game into an addition postive and negative prompt')
-    opt_backup = getOptionOrInput('create_backup', str, 'Create Backup of images and prompts(later if enabled)?')
-    opt_save_prompt = getOptionOrInput('save_prompt', str, 'Save prompt to text?')
+    opt_backup = getOptionOrInput('create_backup', bool, 'Create Backup of images and prompts(later if enabled)?')
+    opt_save_prompt = getOptionOrInput('save_prompt', bool, 'Save prompt to text?')
     if opt_provider == 'WebUI':
         from PIL import Image, ImageOps, ImageChops
         from traceback import format_exc
@@ -401,6 +401,7 @@ if __name__ == '__main__':
         img_name = os.path.basename(image_path)
         global save_path
         save_path = image_path
+        print(type(opt_save_prompt))
         if opt_backup == True:
             generate_backup()
         if opt_save_prompt == True:
