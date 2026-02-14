@@ -14,6 +14,7 @@ Lib/
 Scripts/
 share
 pyvenv.cfg
+venv
 
 # User-specific files
 *.rsuser
