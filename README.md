@@ -35,7 +35,7 @@ Into something this:
 ### ComfyUI
  * Create a workflow (or download mine [RimAvatarWorkflowCheyenne](https://raw.githubusercontent.com/deadmanIsARabbit/RimworldAvatarToStableDiffusion/refs/heads/main/RimAvatarWorkflowCheyenne.json))
  * Point the var `workflow_path` to your API enabled Workflow file
- * If you decide to use my workflow i can only recommend to use the [_CHEYENNE_ Model v2.0 or below](https://civitai.com/models/198051?modelVersionId=1055511) and LoRa like [RimWorld Art Style](https://civitai.com/models/411781/rimworld-art-style)
+ * If you decide to use my workflow i can only recommend to use the [_CHEYENNE_ Model v2.0 or below](https://civitai.com/models/198051?modelVersionId=1055511) and a LoRa like [RimWorld Art Style](https://civitai.com/models/411781/rimworld-art-style)
 ### WebUI
 The script is written in such a way that you do not have to interact with it if the configuration file is completely filled out. 
 However, if you want to change parameters during runtime, you can comment out parameters in the configuration, you will then be asked for the desired option when generating the image (except for the server_address, because why)
