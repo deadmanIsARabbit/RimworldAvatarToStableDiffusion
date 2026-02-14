@@ -6,9 +6,9 @@ This is a simple Python script based on the work of [Saiphe](https://steamcommun
 
 At this point I have taken all the work done by [Pat](https://steamcommunity.com/profiles/76561198174973085) and [Saiphe](https://steamcommunity.com/id/saipheblue) [Philipp Doll @9elements.com](https://9elements.com/blog/hosting-a-comfyui-workflow-via-api/)  to make it a bit more configurable. So props go all of them and [bolphen](https://steamcommunity.com/profiles/76561199575793319) for this awesome mod. 
 
-All in all it turn this:
-![Before](img/Before.png "Before")
-Into something this:
+**All in all it turn this:**\
+![Before](img/Before.png "Before")\
+**Into something this:**\
 ![After](img/After.png "After")
 
 ## Requirements
