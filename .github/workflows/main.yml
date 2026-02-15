@@ -56,8 +56,10 @@ jobs:
         run: chmod +x Avatar2SD || true
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.2
         with:
+          permissions:
+            contents: write
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           draft: false
