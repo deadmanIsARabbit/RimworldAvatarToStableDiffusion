@@ -53,7 +53,7 @@ jobs:
         run: ls -R
 
       - name: Make files executable (Linux/Mac)
-        run: chmod +x Avatar2SD* || true
+        run: chmod +x Avatar2SD || true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
